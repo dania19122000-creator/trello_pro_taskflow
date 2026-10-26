@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            Int              @id @default(autoincrement())
+  email         String           @unique
+  password      String
+  name          String
+  lastSeenAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  boards        Board[]          @relation("UserBoards") 
+  cards         Card[]           @relation("UserCards")  
+  boardMembers  BoardMember[]    
+  comments      Comment[]   
+}
+
+model Board {
+  id            Int              @id @default(autoincrement())
+  title         String
+  description   String?
+  ownerId       Int
+  owner         User             @relation("UserBoards", fields: [ownerId], references: [id])
+  columns       Column[]
+  members       BoardMember[]
+  labels        Label[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+
+model BoardMember {
+  id            Int              @id @default(autoincrement())
+  boardId       Int
+  board         Board            @relation(fields: [boardId], references: [id])
+  userId        Int
+  user          User             @relation(fields: [userId], references: [id])
+  role          Role             @default(VIEWER)
+  joinedAt      DateTime         @default(now()) 
+}
+
+enum Role {
+  OWNER 
+  ADMIN
+  VIEWER
+}
+
+
+model Column {
+  id            Int               @id @default(autoincrement())
+  title         String
+  order         Int               @default(0)
+  boardId       Int
+  board         Board             @relation(fields: [boardId], references: [id])
+  cards         Card[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model Card {
+  id            Int               @id @default(autoincrement())
+  title         String    
+  description   String?
+  order         Int               @default(0)
+  columnId      Int
+  column        Column            @relation(fields: [columnId], references: [id])
+  assigneeId    Int?
+  assignee      User?             @relation("UserCards", fields: [assigneeId], references: [id])
+  dueDate       DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  comments      Comment[]
+  labels        CardLabel[]
+}
+
+
+model Comment {
+  id            Int                @id @default(autoincrement())
+  content       String
+  cardId        Int
+  card          Card               @relation(fields: [cardId], references: [id])
+  userId        Int
+  user          User               @relation(fields: [userId], references: [id])
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model Label {
+  id            Int                @id @default(autoincrement())
+  name          String
+  color         String
+  boardId       Int
+  board         Board              @relation(fields: [boardId], references: [id])
+  cards         CardLabel[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+
+model CardLabel {
+  id            Int                @id @default(autoincrement())
+  cardId        Int
+  card          Card               @relation(fields: [cardId], references: [id])
+  labelId       Int
+  label         Label              @relation(fields: [labelId], references: [id])
+
+}
